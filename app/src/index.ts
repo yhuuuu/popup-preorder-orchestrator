@@ -16,11 +16,16 @@ import {
 const app = express();
 const PORT = 3000;
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET ?? 'dev-webhook-secret';
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173';
 
 // Middleware
 app.use(express.json());
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const requestOrigin = req.header('Origin');
+  if (requestOrigin === FRONTEND_ORIGIN) {
+    res.header('Access-Control-Allow-Origin', FRONTEND_ORIGIN);
+    res.header('Vary', 'Origin');
+  }
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') {

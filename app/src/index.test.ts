@@ -165,6 +165,26 @@ describe('API behavior', () => {
   })
 })
 
+describe('CORS behavior', () => {
+  it('allows requests from the configured frontend origin', async () => {
+    const response = await request(app)
+      .get('/api/health')
+      .set('Origin', 'http://localhost:5173')
+
+    expect(response.status).toBe(200)
+    expect(response.headers['access-control-allow-origin']).toBe('http://localhost:5173')
+  })
+
+  it('does not allow requests from an unknown origin', async () => {
+    const response = await request(app)
+      .get('/api/health')
+      .set('Origin', 'https://unknown.example.com')
+
+    expect(response.status).toBe(200)
+    expect(response.headers['access-control-allow-origin']).toBeUndefined()
+  })
+})
+
 describe('Webhook retry behavior', () => {
   it('retries a transient failure and returns the successful attempt count', async () => {
     let calls = 0
