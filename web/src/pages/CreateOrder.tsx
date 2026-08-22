@@ -71,13 +71,13 @@ export function CreateOrder({ onBack }: CreateOrderProps) {
   }
 
   return (
-    <div style={{
+    <div className="create-order-page" style={{
       background: '#f2efe5',
       minHeight: '100vh',
       paddingBottom: '40px'
     }}>
       {/* Navbar */}
-      <div style={{
+      <div className="create-order-header" style={{
         background: 'white',
         padding: '24px 40px',
         borderBottom: '2px solid #2f513a',
@@ -118,7 +118,7 @@ export function CreateOrder({ onBack }: CreateOrderProps) {
       </div>
 
       {/* Form Container */}
-      <div style={{
+      <div className="create-order-content" style={{
         padding: '40px',
         maxWidth: '600px',
         margin: '0 auto'
@@ -167,7 +167,7 @@ export function CreateOrder({ onBack }: CreateOrderProps) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{
+        <form className="create-order-form" onSubmit={handleSubmit} style={{
           background: 'white',
           padding: '32px',
           borderRadius: '12px',

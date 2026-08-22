@@ -27,11 +27,11 @@ export interface WebhookEvent {
   id: string;
   order_id: string;
   payload: string;
-  attempt: number;
-  status_code: number | null;
-  success: boolean;
-  error_message: string | null;
+  status: 'received' | 'processed' | 'failed';
+  attempt_count: number;
+  last_error: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export const orderAPI = {

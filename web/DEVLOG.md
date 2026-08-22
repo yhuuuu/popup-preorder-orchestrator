@@ -240,6 +240,87 @@
 
 ---
 
+## Session: Order Detail Page and Status Updates
+**Date:** 2026-08-21  
+**Focus:** Connecting order rows to individual order details
+
+### Completed
+
+- Added clickable order rows to the dashboard.
+- Added hash route support for individual orders:
+  - `#/orders`
+  - `#/orders/1`
+  - `#/create`
+- Created `web/src/pages/OrderDetail.tsx`.
+- Added order detail loading through `orderAPI.getOrderById()`.
+- Added status update controls:
+  - Pending
+  - Preparing
+  - Ready
+  - Cancelled
+- Added a back button from the detail page to the order list.
+- Added TypeScript types for valid order statuses.
+- Added comments explaining routing, API loading, and status updates.
+
+### Errors Resolved
+
+#### API ID Type Mismatch
+- **Issue:** The API expected the order ID as a string, but the component used a number.
+- **Fix:** Changed `OrderDetailProps.orderId` from `number` to `string`.
+
+#### Invalid Status Type
+- **Issue:** `updateOrderStatus()` only accepts the four valid status values.
+- **Fix:** Added the `OrderStatus` union type:
+  ```ts
+  type OrderStatus =
+    | 'pending'
+    | 'in_progress'
+    | 'completed'
+    | 'cancelled'
+  ```
+
+#### TypeScript Semicolon Error
+- **Issue:** Consecutive style assignments were interpreted as calling a string.
+- **Fix:** Added semicolons to the mouse hover style assignments in `App.tsx`.
+
+### Current State
+
+- ✅ Create Order flow works.
+- ✅ Empty form validation works.
+- ✅ Created orders persist after browser refresh.
+- ✅ Dashboard rows open the correct order detail page.
+- ✅ Order details load from the API.
+- ✅ Order status updates are connected to the backend.
+- ✅ Frontend production build passes.
+
+### Next Testing
+
+- [ ] Test each status transition and refresh the page.
+- [ ] Add delete order functionality with confirmation.
+- [ ] Add loading and error styling to the detail page.
+- [ ] Add webhook events viewer.
+
+#### Order Status Update CORS Error
+- **Issue:** The order detail page loaded correctly, but clicking Pending, Preparing, Ready, or Cancel showed `Failed to update order status`.
+- **Cause:** The frontend sends status changes with a `PATCH` request, and the backend initially rejected the browser preflight request because `PATCH` was missing from its CORS method list.
+- **Fix:** Added `PATCH` to the backend `Access-Control-Allow-Methods` header.
+- **Frontend request:** `web/src/services/api.ts` calls `PATCH /orders/:id/status`.
+- **Result:** Status updates can now reach the backend and persist to SQLite.
+
+#### Webhook Event Field Mismatch
+- **Issue:** The Webhook Events page showed `Status code: N/A`, `Error: None`, and no retry count even when the backend returned real event data.
+- **Root Cause:** The frontend expected `success`, `status_code`, `attempt`, and `error_message`, but the API returns `status`, `attempt_count`, and `last_error`.
+- **Fix:** Updated `WebhookEvent` and the event detail UI to use the backend field names.
+- **Result:** Processed and failed webhook events now display their actual status, attempt count, error, and payload.
+
+#### Webhook Detail Copy and Auto-Refresh
+- **Issue:** Selecting or copying text inside an expanded webhook detail row triggered the parent row click and collapsed the detail.
+- **Fix:** Stopped click-event propagation inside the expanded detail area.
+
+- **Issue:** The Order Board and Webhook Events page required a manual browser refresh after external webhook changes.
+- **Fix:** Added five-second polling to both pages and cleanup when the page is unmounted.
+- **Result:** New order statuses and webhook events appear automatically.
+
 ## Technical Specifications
 
 ### Color Palette (User Finalized)
