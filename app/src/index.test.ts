@@ -1,6 +1,6 @@
 import request from 'supertest'
 import { describe, expect, it } from 'vitest'
-import { app } from './index'
+import { app, retryAsync } from './index'
 
 const webhookSecret = 'dev-webhook-secret'
 const authHeader = 'Bearer dev-token'
@@ -162,5 +162,47 @@ describe('API behavior', () => {
 
     expect(deleteResponse.status).toBe(200)
     expect(deleteResponse.body.code).toBe('ORDER_DELETED')
+  })
+})
+
+describe('Webhook retry behavior', () => {
+  it('retries a transient failure and returns the successful attempt count', async () => {
+    let calls = 0
+
+    const result = await retryAsync(
+      async () => {
+        calls += 1
+        if (calls < 3) {
+          throw new Error('SQLITE_BUSY: database is locked')
+        }
+        return 'processed'
+      },
+      3,
+      1,
+      (error) => error instanceof Error && error.message.includes('SQLITE_BUSY')
+    )
+
+    expect(result.result).toBe('processed')
+    expect(result.attempts).toBe(3)
+    expect(calls).toBe(3)
+  })
+
+  it('stops after the maximum attempts and preserves the final error', async () => {
+    let calls = 0
+    const finalError = new Error('SQLITE_BUSY: database is locked')
+
+    await expect(
+      retryAsync(
+        async () => {
+          calls += 1
+          throw finalError
+        },
+        3,
+        1,
+        (error) => error === finalError
+      )
+    ).rejects.toBe(finalError)
+
+    expect(calls).toBe(3)
   })
 })

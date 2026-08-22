@@ -34,7 +34,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function retryAsync<T>(
+export async function retryAsync<T>(
   operation: () => Promise<T>,
   attempts = 3,
   delayMs = 150,
