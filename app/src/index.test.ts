@@ -99,6 +99,33 @@ describe('API behavior', () => {
     expect(response.status).toBe(400)
   })
 
+  it('rejects an order with a quantity below one', async () => {
+    const response = await request(app)
+      .post('/api/orders')
+      .set('Authorization', authHeader)
+      .send({
+        customer_name: 'Invalid Quantity Customer',
+        item_name: 'Test Item',
+        quantity: 0,
+        pickup_slot: '19:00',
+      })
+
+    expect(response.status).toBe(400)
+  })
+
+  it('returns 401 when creating an order without authentication', async () => {
+    const response = await request(app)
+      .post('/api/orders')
+      .send({
+        customer_name: 'Unauthenticated Customer',
+        item_name: 'Test Item',
+        quantity: 1,
+        pickup_slot: '19:00',
+      })
+
+    expect(response.status).toBe(401)
+  })
+
   it('returns 404 when an order does not exist', async () => {
     const response = await request(app)
       .get('/api/orders/999999')
