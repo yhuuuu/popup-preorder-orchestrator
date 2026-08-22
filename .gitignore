@@ -1,3 +1,4 @@
 app/.git-backup/
 app/.env
 app/orders.db
+app/orders.test.db

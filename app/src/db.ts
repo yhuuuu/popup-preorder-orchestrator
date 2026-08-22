@@ -1,8 +1,9 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
-// Create or connect to SQLite database file
-const dbPath = path.join(process.cwd(), 'orders.db');
+// Keep automated test data separate from the local development database.
+const dbFileName = process.env.NODE_ENV === 'test' ? 'orders.test.db' : 'orders.db';
+const dbPath = path.join(process.cwd(), dbFileName);
 const db = new Database(dbPath);
 
 // Initialize database tables
