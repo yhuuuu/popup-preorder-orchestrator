@@ -249,6 +249,8 @@ export function CreateOrder({ onBack }: CreateOrderProps) {
                 borderRadius: '8px',
                 fontSize: '14px',
                 fontFamily: 'inherit',
+                color: '#2f513a',
+                colorScheme: 'light',
                 boxSizing: 'border-box',
                 transition: 'all 0.3s'
               }}
@@ -313,6 +315,8 @@ export function CreateOrder({ onBack }: CreateOrderProps) {
                     borderRadius: '8px',
                     fontSize: '14px',
                     fontFamily: 'inherit',
+                    color: '#2f513a',
+                    colorScheme: 'light',
                     background: 'white',
                     boxSizing: 'border-box'
                   }}
@@ -339,6 +343,8 @@ export function CreateOrder({ onBack }: CreateOrderProps) {
                     borderRadius: '8px',
                     fontSize: '14px',
                     fontFamily: 'inherit',
+                    color: '#2f513a',
+                    colorScheme: 'light',
                     textAlign: 'center',
                     boxSizing: 'border-box'
                   }}
@@ -416,6 +422,8 @@ export function CreateOrder({ onBack }: CreateOrderProps) {
                 borderRadius: '8px',
                 fontSize: '14px',
                 fontFamily: 'inherit',
+                color: '#2f513a',
+                colorScheme: 'light',
                 background: 'white',
                 boxSizing: 'border-box'
               }}
