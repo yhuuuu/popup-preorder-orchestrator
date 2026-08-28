@@ -127,13 +127,24 @@ function App() {
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        <h1 style={{
-          margin: 0,
-          fontSize: '24px',
-          fontWeight: '700',
-          color: '#2f513a'
-        }}>
-          Pop-up Orders
+        <h1 style={{ margin: 0 }}>
+          <a
+            href="#/"
+            style={{
+              fontSize: '24px',
+              fontWeight: '700',
+              color: '#2f513a',
+              textDecoration: 'none'
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as any).style.opacity = '0.7'
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as any).style.opacity = '1'
+            }}
+          >
+            Pop-up Orders
+          </a>
         </h1>
         <div className="orders-actions">
         <button style={{
