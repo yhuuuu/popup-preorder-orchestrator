@@ -1,210 +1,59 @@
-# Bakery Dashboard
+# Pop-up Orders — web
 
-Create a polished frontend UI for a pop-up food vendor pre-order management dashboard.
+Frontend for the pop-up pre-order dashboard. Talks to the Express API in `../app`.
 
-Tech stack:
+The UI was generated with Lovable and then rewired to the real API; the data
+layer in `src/lib/orders/` is hand-written and is the contract with the backend.
 
-- React
+## Running it
 
-- TypeScript
+The API must be running first, otherwise every page shows its error state:
 
-- Vite
+```bash
+cd ../app && npm install && npm run dev   # http://localhost:3000
+cd ../web && npm install && npm run dev   # http://localhost:8080
+```
 
-- Use responsive design for desktop, tablet, and mobile
+`npm run dev` serves on **port 8080**. That port must appear in `FRONTEND_ORIGIN`
+in `app/.env`, or the browser blocks every request with a CORS error.
 
-- Use mock data initially, but structure the code so it can later connect to a REST API
+## Configuration
 
-Design style:
+`web/.env` (not committed):
 
-- Minimal, elegant, warm bakery aesthetic
+```
+VITE_API_BASE_URL=http://localhost:3000/api
+VITE_API_TOKEN=dev-token
+```
 
-- Background color: #f2efe5
+`VITE_`-prefixed variables are bundled into the browser JavaScript and are
+readable by anyone. That is fine for a local dev token, but a real deployment
+has to move the token server-side.
 
-- Lavender accent: #d6c7e9
+## Layout
 
-- Dark green: #2f513a
+| Path | Purpose |
+| --- | --- |
+| `src/routes/` | Pages, one file per route (TanStack Router) |
+| `src/lib/orders/types.ts` | The API contract. Fields are snake_case because they come straight from the JSON |
+| `src/lib/orders/api.ts` | The only place that performs HTTP calls |
+| `src/lib/orders/queries.ts` | react-query options, so caching lives in one place |
+| `src/components/orders/` | Order-specific components |
+| `src/components/ui/` | shadcn/ui primitives, unmodified |
 
-- White cards
+## Notes
 
-- No dark theme
+- An order holds **many flavours**, each with its own quantity (`items[]`), so
+  any view showing a single item name is out of date.
+- Pickup times are a fixed list from `GET /api/pickup-slots`; do not hardcode them.
+- Statuses are `pending`, `in_progress`, `completed`, `cancelled`.
+- Timestamps arrive as SQLite's `"YYYY-MM-DD HH:MM:SS"` in UTC. Use the helpers
+  in `src/lib/format.ts`, which normalise that before parsing.
 
-- No Chinese text
+## Checks
 
-- No emojis
-
-- Avoid oversized cards and excessive spacing
-
-- Use clean typography, subtle borders, and soft shadows
-
-- The interface should feel professional and interview-ready
-
-Pages and features:
-
-1. Order Dashboard
-
-- Header with the title “Pop-up Orders”
-
-- Primary button: “New Order”
-
-- Compact order table/list showing many orders at once
-
-- Columns:
-
-  - Order ID
-
-  - Customer
-
-  - Item
-
-  - Quantity
-
-  - Pickup time
-
-  - Status
-
-  - Actions
-
-- Status badges:
-
-  - Pending
-
-  - Preparing
-
-  - Ready
-
-  - Cancelled
-
-- Add search and status filtering
-
-- Add pagination or a compact “Load more” option
-
-- Include loading, empty, and error states
-
-- Clicking an order opens its detail view
-
-2. Create Order Page
-
-- Form fields:
-
-  - Customer name
-
-  - Item name
-
-  - Quantity
-
-  - Pickup time
-
-- Clear labels and validation messages
-
-- Submit button: “Create Order”
-
-- Cancel/back button
-
-- Show success and error notifications
-
-- After successful submission, return to the dashboard
-
-3. Order Detail Page
-
-- Display complete order information
-
-- Show current status
-
-- Allow status updates
-
-- Include buttons for:
-
-  - Mark as preparing
-
-  - Mark as ready
-
-  - Cancel order
-
-  - Delete order
-
-- Add a confirmation dialog before destructive actions
-
-4. Webhook Events Page
-
-- Display webhook callback history
-
-- Columns:
-
-  - Event ID
-
-  - Order ID
-
-  - Event type
-
-  - Delivery status
-
-  - Attempt count
-
-  - Created time
-
-- Show success, failed, and retrying states
-
-- Include an expandable row for event details
-
-Component and code requirements:
-
-- Use reusable components for buttons, badges, cards, tables, forms, dialogs, and notifications
-
-- Keep components accessible and keyboard-friendly
-
-- Use semantic HTML
-
-- Keep the layout compact and information-dense
-
-- Avoid putting all styles in one huge component
-
-- Use a clean folder structure
-
-- Include realistic sample order data
-
-- Make the UI visually consistent across all pages
-
-- Include responsive behavior for small screens
-
-You can add this at the end if Lovable needs to connect to your existing backend:
-
-The backend API runs at http://localhost:3000/api.
-
-Use Bearer token authentication:
-
-Authorization: Bearer dev-token
-
-Available endpoints include:
-
-- GET /api/orders
-
-- POST /api/orders
-
-- GET /api/orders/:id
-
-- PUT /api/orders/:id
-
-- DELETE /api/orders/:id
-
-- GET /api/webhooks/events
-
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/b5929399-8c23-4a20-9b06-a97d6ffb0426).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+```bash
+npx tsc --noEmit   # types
+npm run lint       # eslint + prettier
+npm run build      # production build
 ```
