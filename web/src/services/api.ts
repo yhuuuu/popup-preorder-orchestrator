@@ -12,15 +12,33 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+export interface MenuItem {
+  id: number;
+  name: string;
+  available: number;
+}
+
+export interface OrderItem {
+  menu_item_id: number;
+  item_name: string;
+  quantity: number;
+}
+
 export interface Order {
   id: string;
   customer_name: string;
-  item_name: string;
-  quantity: number;
   pickup_slot: string;
+  items: OrderItem[];
+  total_quantity: number;
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   created_at: string;
   updated_at: string;
+}
+
+export interface CreateOrderInput {
+  customer_name: string;
+  pickup_slot: string;
+  items: { menu_item_id: number; quantity: number }[];
 }
 
 export interface WebhookEvent {
@@ -45,7 +63,7 @@ export const orderAPI = {
     return response.data.data;
   },
 
-  createOrder: async (order: Omit<Order, 'id' | 'created_at' | 'updated_at' | 'status'>) => {
+  createOrder: async (order: CreateOrderInput) => {
     const response = await apiClient.post('/orders', order);
     return response.data.data;
   },
@@ -58,6 +76,13 @@ export const orderAPI = {
   deleteOrder: async (id: string) => {
     const response = await apiClient.delete(`/orders/${id}`);
     return response.data.data;
+  },
+};
+
+export const menuAPI = {
+  getMenu: async (): Promise<MenuItem[]> => {
+    const response = await apiClient.get('/menu');
+    return response.data.menu || [];
   },
 };
 

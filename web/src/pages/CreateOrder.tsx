@@ -1,28 +1,67 @@
-import { useState } from 'react'
-import { orderAPI } from '../services/api'
+import { useEffect, useState } from 'react'
+import { menuAPI, orderAPI, type MenuItem } from '../services/api'
 
 interface CreateOrderProps {
   onBack: () => void
 }
 
+interface ItemRow {
+  menu_item_id: number | ''
+  quantity: number
+}
+
 export function CreateOrder({ onBack }: CreateOrderProps) {
   const [formData, setFormData] = useState({
     customer_name: '',
-    item_name: '',
-    quantity: 1,
     pickup_slot: ''
   })
+  const [menu, setMenu] = useState<MenuItem[]>([])
+  const [menuError, setMenuError] = useState('')
+  const [itemRows, setItemRows] = useState<ItemRow[]>([{ menu_item_id: '', quantity: 1 }])
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
+  useEffect(() => {
+    const loadMenu = async () => {
+      try {
+        setMenu(await menuAPI.getMenu())
+      } catch {
+        setMenuError('Could not load the menu. Check that the API is running.')
+      }
+    }
+
+    loadMenu()
+  }, [])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'quantity' ? parseInt(value) : value
-    }))
+    setFormData(prev => ({ ...prev, [name]: value }))
   }
+
+  const updateRow = (index: number, changes: Partial<ItemRow>) => {
+    setItemRows(prev => prev.map((row, i) => (i === index ? { ...row, ...changes } : row)))
+  }
+
+  const addRow = () => {
+    setItemRows(prev => [...prev, { menu_item_id: '', quantity: 1 }])
+  }
+
+  const removeRow = (index: number) => {
+    setItemRows(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // Flavours already chosen are hidden from the other dropdowns, because the
+  // API rejects an order that lists the same flavour on two lines.
+  const availableOptions = (index: number) => {
+    const takenIds = itemRows
+      .filter((_, i) => i !== index)
+      .map(row => row.menu_item_id)
+
+    return menu.filter(item => !takenIds.includes(item.id))
+  }
+
+  const totalQuantity = itemRows.reduce((sum, row) => sum + (Number(row.quantity) || 0), 0)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,30 +75,36 @@ export function CreateOrder({ onBack }: CreateOrderProps) {
         setLoading(false)
         return
       }
-      if (!formData.item_name.trim()) {
-        setError('Item name is required')
-        setLoading(false)
-        return
-      }
-      if (formData.quantity < 1) {
-        setError('Quantity must be at least 1')
-        setLoading(false)
-        return
-      }
       if (!formData.pickup_slot.trim()) {
         setError('Pickup time is required')
         setLoading(false)
         return
       }
 
-      await orderAPI.createOrder(formData)
-      setMessage('Order created successfully!')
-      setFormData({
-        customer_name: '',
-        item_name: '',
-        quantity: 1,
-        pickup_slot: ''
+      const chosenRows = itemRows.filter(row => row.menu_item_id !== '')
+      if (chosenRows.length === 0) {
+        setError('Choose at least one flavour')
+        setLoading(false)
+        return
+      }
+      if (chosenRows.some(row => Number(row.quantity) < 1)) {
+        setError('Every quantity must be at least 1')
+        setLoading(false)
+        return
+      }
+
+      await orderAPI.createOrder({
+        customer_name: formData.customer_name,
+        pickup_slot: formData.pickup_slot,
+        items: chosenRows.map(row => ({
+          menu_item_id: Number(row.menu_item_id),
+          quantity: Number(row.quantity)
+        }))
       })
+
+      setMessage('Order created successfully!')
+      setFormData({ customer_name: '', pickup_slot: '' })
+      setItemRows([{ menu_item_id: '', quantity: 1 }])
       setTimeout(() => {
         onBack()
       }, 1000)
@@ -212,7 +257,7 @@ export function CreateOrder({ onBack }: CreateOrderProps) {
             />
           </div>
 
-          {/* Item Name */}
+          {/* Flavours */}
           <div style={{ marginBottom: '20px' }}>
             <label style={{
               display: 'block',
@@ -222,73 +267,124 @@ export function CreateOrder({ onBack }: CreateOrderProps) {
               marginBottom: '8px',
               textTransform: 'uppercase'
             }}>
-              Item Name
+              Flavours
             </label>
-            <input
-              type="text"
-              name="item_name"
-              value={formData.item_name}
-              onChange={handleChange}
-              placeholder="e.g., Croissant, Sourdough Bread"
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '1px solid #e8e4db',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontFamily: 'inherit',
-                boxSizing: 'border-box',
-                transition: 'all 0.3s'
-              }}
-              onFocus={(e) => {
-                (e.currentTarget as any).style.borderColor = '#d6c7e9'
-                ;(e.currentTarget as any).style.boxShadow = '0 0 0 3px rgba(214,199,233,0.1)'
-              }}
-              onBlur={(e) => {
-                (e.currentTarget as any).style.borderColor = '#e8e4db'
-                ;(e.currentTarget as any).style.boxShadow = 'none'
-              }}
-            />
-          </div>
 
-          {/* Quantity */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '12px',
-              color: '#8b7b8e',
-              fontWeight: '600',
-              marginBottom: '8px',
-              textTransform: 'uppercase'
-            }}>
-              Quantity
-            </label>
-            <input
-              type="number"
-              name="quantity"
-              value={formData.quantity}
-              onChange={handleChange}
-              min="1"
-              max="999"
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '1px solid #e8e4db',
+            {menuError && (
+              <div style={{
+                background: '#fde8e8',
+                border: '1px solid #f0d5d5',
+                color: '#c33333',
+                padding: '10px 14px',
                 borderRadius: '8px',
-                fontSize: '14px',
-                fontFamily: 'inherit',
-                boxSizing: 'border-box',
-                transition: 'all 0.3s'
-              }}
-              onFocus={(e) => {
-                (e.currentTarget as any).style.borderColor = '#d6c7e9'
-                ;(e.currentTarget as any).style.boxShadow = '0 0 0 3px rgba(214,199,233,0.1)'
-              }}
-              onBlur={(e) => {
-                (e.currentTarget as any).style.borderColor = '#e8e4db'
-                ;(e.currentTarget as any).style.boxShadow = 'none'
-              }}
-            />
+                marginBottom: '12px',
+                fontSize: '13px'
+              }}>
+                {menuError}
+              </div>
+            )}
+
+            {itemRows.map((row, index) => (
+              <div
+                key={index}
+                style={{
+                  display: 'flex',
+                  gap: '8px',
+                  alignItems: 'center',
+                  marginBottom: '8px'
+                }}
+              >
+                <select
+                  value={row.menu_item_id}
+                  onChange={(e) => updateRow(index, {
+                    menu_item_id: e.target.value === '' ? '' : Number(e.target.value)
+                  })}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    padding: '12px 16px',
+                    border: '1px solid #e8e4db',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontFamily: 'inherit',
+                    background: 'white',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <option value="">Select a flavour…</option>
+                  {availableOptions(index).map((menuItem) => (
+                    <option key={menuItem.id} value={menuItem.id}>
+                      {menuItem.name}
+                    </option>
+                  ))}
+                </select>
+
+                <input
+                  type="number"
+                  aria-label="Quantity"
+                  value={row.quantity}
+                  onChange={(e) => updateRow(index, { quantity: parseInt(e.target.value) || 0 })}
+                  min="1"
+                  max="999"
+                  style={{
+                    width: '84px',
+                    padding: '12px',
+                    border: '1px solid #e8e4db',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontFamily: 'inherit',
+                    textAlign: 'center',
+                    boxSizing: 'border-box'
+                  }}
+                />
+
+                <button
+                  type="button"
+                  onClick={() => removeRow(index)}
+                  disabled={itemRows.length === 1}
+                  title="Remove this flavour"
+                  style={{
+                    padding: '12px 14px',
+                    border: '1px solid #e8e4db',
+                    borderRadius: '8px',
+                    background: 'white',
+                    color: itemRows.length === 1 ? '#ccc' : '#c33333',
+                    cursor: itemRows.length === 1 ? 'not-allowed' : 'pointer',
+                    fontWeight: '700'
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: '12px'
+            }}>
+              <button
+                type="button"
+                onClick={addRow}
+                disabled={itemRows.length >= menu.length && menu.length > 0}
+                style={{
+                  background: 'transparent',
+                  color: '#2f513a',
+                  border: '1px dashed #2f513a',
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  fontWeight: '600',
+                  cursor: itemRows.length >= menu.length && menu.length > 0 ? 'not-allowed' : 'pointer',
+                  fontSize: '13px'
+                }}
+              >
+                + Add another flavour
+              </button>
+              <span style={{ fontSize: '13px', color: '#8b7b8e' }}>
+                {totalQuantity} total
+              </span>
+            </div>
           </div>
 
           {/* Pickup Slot */}

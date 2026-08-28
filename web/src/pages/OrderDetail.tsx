@@ -100,10 +100,22 @@ export function OrderDetail({ orderId, onBack }: OrderDetailProps) {
                 <p>Order #{order.id}</p>
                 <h1>{order.customer_name}</h1>
 
-                <p><strong>Item:</strong> {order.item_name}</p>
-                <p><strong>Quantity:</strong> {order.quantity}</p>
                 <p><strong>Pickup:</strong> {order.pickup_slot}</p>
                 <p><strong>Status:</strong> {order.status}</p>
+
+                <div style={{ marginTop: '20px' }}>
+                    <strong>Items</strong>
+                    <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
+                        {order.items?.map((item) => (
+                            <li key={item.menu_item_id}>
+                                {item.item_name} × {item.quantity}
+                            </li>
+                        ))}
+                    </ul>
+                    <p style={{ marginTop: '8px', color: '#8b7b8e' }}>
+                        {order.total_quantity} items total
+                    </p>
+                </div>
 
                 <div className="order-status-actions" style={{ display: 'flex', gap: '8px', marginTop: '24px' }}>
                     <button disabled={saving} onClick={() => updateStatus('pending')}>

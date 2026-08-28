@@ -55,19 +55,40 @@ export function validateOrderId(orderId: any): { valid: boolean; error?: ErrorRe
   return { valid: true, data: id };
 }
 
+export interface OrderItemInput {
+  menu_item_id: number;
+  quantity: number;
+}
+
+export interface CreateOrderInput {
+  customer_name: string;
+  pickup_slot: string;
+  items: OrderItemInput[];
+}
+
+const MAX_ITEMS_PER_ORDER = 20;
+
 // Validate POST /api/orders request body
-export function validateCreateOrder(body: any): { valid: boolean; error?: ErrorResponse } {
-  const { customer_name, item_name, quantity, pickup_slot } = body;
+export function validateCreateOrder(
+  body: any
+): { valid: boolean; error?: ErrorResponse; data?: CreateOrderInput } {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return {
+      valid: false,
+      error: createValidationError('Request body must be an object'),
+    };
+  }
+
+  const { customer_name, pickup_slot, items } = body;
 
   // 1. Check required fields
-  if (!customer_name || !item_name || !quantity || !pickup_slot) {
+  if (!customer_name || !pickup_slot || !items) {
     return {
       valid: false,
       error: createValidationError('Missing required fields', {
         customer_name: customer_name ? 'ok' : 'required',
-        item_name: item_name ? 'ok' : 'required',
-        quantity: quantity ? 'ok' : 'required',
         pickup_slot: pickup_slot ? 'ok' : 'required',
+        items: items ? 'ok' : 'required',
       }),
     };
   }
@@ -86,35 +107,7 @@ export function validateCreateOrder(body: any): { valid: boolean; error?: ErrorR
     };
   }
 
-  // 3. Validate item_name
-  if (typeof item_name !== 'string') {
-    return {
-      valid: false,
-      error: createValidationError('item_name must be a string'),
-    };
-  }
-  if (item_name.length < 2 || item_name.length > 100) {
-    return {
-      valid: false,
-      error: createValidationError('item_name must be 2-100 characters'),
-    };
-  }
-
-  // 4. Validate quantity
-  if (typeof quantity !== 'number' || !Number.isInteger(quantity)) {
-    return {
-      valid: false,
-      error: createValidationError('quantity must be an integer'),
-    };
-  }
-  if (quantity <= 0 || quantity > 1000) {
-    return {
-      valid: false,
-      error: createValidationError('quantity must be between 1 and 1000'),
-    };
-  }
-
-  // 5. Validate pickup_slot
+  // 3. Validate pickup_slot
   if (typeof pickup_slot !== 'string') {
     return {
       valid: false,
@@ -128,10 +121,80 @@ export function validateCreateOrder(body: any): { valid: boolean; error?: ErrorR
     };
   }
 
-  // 6. Prevent SQL injection
+  // 4. Validate the item lines
+  if (!Array.isArray(items)) {
+    return {
+      valid: false,
+      error: createValidationError('items must be an array'),
+    };
+  }
+  if (items.length === 0) {
+    return {
+      valid: false,
+      error: createValidationError('items must contain at least one item'),
+    };
+  }
+  if (items.length > MAX_ITEMS_PER_ORDER) {
+    return {
+      valid: false,
+      error: createValidationError(`items must contain at most ${MAX_ITEMS_PER_ORDER} items`),
+    };
+  }
+
+  const normalizedItems: OrderItemInput[] = [];
+  const seenMenuItemIds = new Set<number>();
+
+  for (let index = 0; index < items.length; index++) {
+    const line = items[index];
+
+    if (!line || typeof line !== 'object' || Array.isArray(line)) {
+      return {
+        valid: false,
+        error: createValidationError(`items[${index}] must be an object`),
+      };
+    }
+
+    const { menu_item_id, quantity } = line;
+
+    if (typeof menu_item_id !== 'number' || !Number.isInteger(menu_item_id) || menu_item_id <= 0) {
+      return {
+        valid: false,
+        error: createValidationError(`items[${index}].menu_item_id must be a positive integer`),
+      };
+    }
+
+    if (typeof quantity !== 'number' || !Number.isInteger(quantity)) {
+      return {
+        valid: false,
+        error: createValidationError(`items[${index}].quantity must be an integer`),
+      };
+    }
+
+    if (quantity <= 0 || quantity > 1000) {
+      return {
+        valid: false,
+        error: createValidationError(`items[${index}].quantity must be between 1 and 1000`),
+      };
+    }
+
+    // Two lines for the same flavour would make the order total ambiguous.
+    if (seenMenuItemIds.has(menu_item_id)) {
+      return {
+        valid: false,
+        error: createValidationError(
+          `items contains menu_item_id ${menu_item_id} more than once; combine them into one line`
+        ),
+      };
+    }
+    seenMenuItemIds.add(menu_item_id);
+
+    normalizedItems.push({ menu_item_id, quantity });
+  }
+
+  // 5. Prevent SQL injection
   const dangerousChars = ['--', ';', '/*', '*/'];
   for (const char of dangerousChars) {
-    if (customer_name.includes(char) || item_name.includes(char)) {
+    if (customer_name.includes(char)) {
       return {
         valid: false,
         error: createValidationError('Invalid characters in input'),
@@ -139,7 +202,14 @@ export function validateCreateOrder(body: any): { valid: boolean; error?: ErrorR
     }
   }
 
-  return { valid: true };
+  return {
+    valid: true,
+    data: {
+      customer_name,
+      pickup_slot,
+      items: normalizedItems,
+    },
+  };
 }
 
 // Validate PATCH /api/orders/:id/status request

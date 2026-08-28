@@ -314,7 +314,7 @@ function App() {
                   #{order.id}
                 </div>
 
-                {/* Customer + Item */}
+                {/* Customer + Items */}
                 <div style={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -331,7 +331,7 @@ function App() {
                     fontSize: '12px',
                     color: '#8b7b8e'
                   }}>
-                    {order.item_name}
+                    {(order.items ?? []).map((item: any) => `${item.item_name} × ${item.quantity}`).join(', ') || 'No items'}
                   </div>
                 </div>
 
@@ -352,7 +352,7 @@ function App() {
                     fontWeight: '700',
                     color: '#2f513a'
                   }}>
-                    {order.quantity}
+                    {order.total_quantity}
                   </div>
                 </div>
 
