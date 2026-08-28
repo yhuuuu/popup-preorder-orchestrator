@@ -3,6 +3,7 @@ import { authMiddleware } from './middleware/auth';
 import { errorHandler } from './middleware/error';
 import { requestLogger } from './middleware/logger';
 import db from './db';
+import { PICKUP_SLOTS } from './menu';
 import {
   createAuthError,
   createNotFoundError,
@@ -183,6 +184,10 @@ app.get('/api/menu', authMiddleware, (req, res) => {
   `).all() as any[];
 
   res.json({ menu });
+});
+
+app.get('/api/pickup-slots', authMiddleware, (_req, res) => {
+  res.json({ pickup_slots: PICKUP_SLOTS });
 });
 
 app.get('/api/orders', authMiddleware, (req, res) => {

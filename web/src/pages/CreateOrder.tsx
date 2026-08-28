@@ -16,6 +16,7 @@ export function CreateOrder({ onBack }: CreateOrderProps) {
     pickup_slot: ''
   })
   const [menu, setMenu] = useState<MenuItem[]>([])
+  const [pickupSlots, setPickupSlots] = useState<string[]>([])
   const [menuError, setMenuError] = useState('')
   const [itemRows, setItemRows] = useState<ItemRow[]>([{ menu_item_id: '', quantity: 1 }])
   const [loading, setLoading] = useState(false)
@@ -23,18 +24,23 @@ export function CreateOrder({ onBack }: CreateOrderProps) {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const loadMenu = async () => {
+    const loadOptions = async () => {
       try {
-        setMenu(await menuAPI.getMenu())
+        const [menuItems, slots] = await Promise.all([
+          menuAPI.getMenu(),
+          menuAPI.getPickupSlots(),
+        ])
+        setMenu(menuItems)
+        setPickupSlots(slots)
       } catch {
         setMenuError('Could not load the menu. Check that the API is running.')
       }
     }
 
-    loadMenu()
+    loadOptions()
   }, [])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
@@ -399,12 +405,10 @@ export function CreateOrder({ onBack }: CreateOrderProps) {
             }}>
               Pickup Time
             </label>
-            <input
-              type="text"
+            <select
               name="pickup_slot"
               value={formData.pickup_slot}
               onChange={handleChange}
-              placeholder="e.g., 2pm, 3:30pm, 10:00am"
               style={{
                 width: '100%',
                 padding: '12px 16px',
@@ -412,18 +416,17 @@ export function CreateOrder({ onBack }: CreateOrderProps) {
                 borderRadius: '8px',
                 fontSize: '14px',
                 fontFamily: 'inherit',
-                boxSizing: 'border-box',
-                transition: 'all 0.3s'
+                background: 'white',
+                boxSizing: 'border-box'
               }}
-              onFocus={(e) => {
-                (e.currentTarget as any).style.borderColor = '#d6c7e9'
-                ;(e.currentTarget as any).style.boxShadow = '0 0 0 3px rgba(214,199,233,0.1)'
-              }}
-              onBlur={(e) => {
-                (e.currentTarget as any).style.borderColor = '#e8e4db'
-                ;(e.currentTarget as any).style.boxShadow = 'none'
-              }}
-            />
+            >
+              <option value="">Select a pickup time…</option>
+              {pickupSlots.map((slot) => (
+                <option key={slot} value={slot}>
+                  {slot}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Submit Button */}

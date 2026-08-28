@@ -84,6 +84,11 @@ export const menuAPI = {
     const response = await apiClient.get('/menu');
     return response.data.menu || [];
   },
+
+  getPickupSlots: async (): Promise<string[]> => {
+    const response = await apiClient.get('/pickup-slots');
+    return response.data.pickup_slots || [];
+  },
 };
 
 export const webhookAPI = {

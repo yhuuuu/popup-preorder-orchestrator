@@ -1,4 +1,6 @@
 // Unified error response format
+import { PICKUP_SLOTS } from './menu';
+
 export interface ErrorResponse {
   code: string;
   message: string;
@@ -114,10 +116,12 @@ export function validateCreateOrder(
       error: createValidationError('pickup_slot must be a string'),
     };
   }
-  if (pickup_slot.length < 3 || pickup_slot.length > 50) {
+  if (!PICKUP_SLOTS.includes(pickup_slot)) {
     return {
       valid: false,
-      error: createValidationError('pickup_slot must be 3-50 characters'),
+      error: createValidationError(
+        `pickup_slot must be one of: ${PICKUP_SLOTS.join(', ')}`
+      ),
     };
   }
 

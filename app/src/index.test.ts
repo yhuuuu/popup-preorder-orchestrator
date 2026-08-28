@@ -58,7 +58,7 @@ describe('API behavior', () => {
       .send({
         customer_name: 'Webhook Test Customer',
         items: [{ menu_item_id: matchaId, quantity: 1 }],
-        pickup_slot: '18:00',
+        pickup_slot: '1:00 PM',
       })
 
     const orderId = createResponse.body.data.id
@@ -91,7 +91,7 @@ describe('API behavior', () => {
           { menu_item_id: matchaId, quantity: 2 },
           { menu_item_id: mangoId, quantity: 3 },
         ],
-        pickup_slot: '19:00',
+        pickup_slot: '1:00 PM',
       })
 
     expect(response.status).toBe(201)
@@ -112,7 +112,7 @@ describe('API behavior', () => {
       .set('Authorization', authHeader)
       .send({
         items: [{ menu_item_id: matchaId, quantity: 1 }],
-        pickup_slot: '19:00',
+        pickup_slot: '1:00 PM',
       })
 
     expect(response.status).toBe(400)
@@ -125,10 +125,32 @@ describe('API behavior', () => {
       .send({
         customer_name: 'Invalid Quantity Customer',
         items: [{ menu_item_id: matchaId, quantity: 0 }],
-        pickup_slot: '19:00',
+        pickup_slot: '1:00 PM',
       })
 
     expect(response.status).toBe(400)
+  })
+
+  it('rejects an order for a pickup time the pop-up does not offer', async () => {
+    const response = await request(app)
+      .post('/api/orders')
+      .set('Authorization', authHeader)
+      .send({
+        customer_name: 'Wrong Slot Customer',
+        items: [{ menu_item_id: matchaId, quantity: 1 }],
+        pickup_slot: '9:00 PM',
+      })
+
+    expect(response.status).toBe(400)
+  })
+
+  it('lists the offered pickup slots', async () => {
+    const response = await request(app)
+      .get('/api/pickup-slots')
+      .set('Authorization', authHeader)
+
+    expect(response.status).toBe(200)
+    expect(response.body.pickup_slots).toEqual(['1:00 PM', '3:00 PM'])
   })
 
   it('rejects an order with no items', async () => {
@@ -138,7 +160,7 @@ describe('API behavior', () => {
       .send({
         customer_name: 'Empty Items Customer',
         items: [],
-        pickup_slot: '19:00',
+        pickup_slot: '1:00 PM',
       })
 
     expect(response.status).toBe(400)
@@ -154,7 +176,7 @@ describe('API behavior', () => {
           { menu_item_id: matchaId, quantity: 1 },
           { menu_item_id: matchaId, quantity: 2 },
         ],
-        pickup_slot: '19:00',
+        pickup_slot: '1:00 PM',
       })
 
     expect(response.status).toBe(400)
@@ -168,7 +190,7 @@ describe('API behavior', () => {
       .send({
         customer_name: 'Unknown Flavour Customer',
         items: [{ menu_item_id: 999999, quantity: 1 }],
-        pickup_slot: '19:00',
+        pickup_slot: '1:00 PM',
       })
 
     expect(response.status).toBe(400)
@@ -181,7 +203,7 @@ describe('API behavior', () => {
       .send({
         customer_name: 'Unauthenticated Customer',
         items: [{ menu_item_id: matchaId, quantity: 1 }],
-        pickup_slot: '19:00',
+        pickup_slot: '1:00 PM',
       })
 
     expect(response.status).toBe(401)
@@ -203,7 +225,7 @@ describe('API behavior', () => {
       .send({
         customer_name: 'Status Test Customer',
         items: [{ menu_item_id: mangoId, quantity: 1 }],
-        pickup_slot: '20:00',
+        pickup_slot: '3:00 PM',
       })
 
     const orderId = createResponse.body.data.id
@@ -234,7 +256,7 @@ describe('API behavior', () => {
           { menu_item_id: matchaId, quantity: 1 },
           { menu_item_id: mangoId, quantity: 4 },
         ],
-        pickup_slot: '21:00',
+        pickup_slot: '3:00 PM',
       })
 
     const orderId = createResponse.body.data.id

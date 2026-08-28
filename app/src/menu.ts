@@ -1,3 +1,10 @@
+// The pickup slots the pop-up offers. Edit this list to change the times
+// customers can choose; orders are validated against it.
+export const PICKUP_SLOTS = [
+  '1:00 PM',
+  '3:00 PM',
+];
+
 // The pop-up menu. Edit this list to add, rename, or remove a flavour; the
 // entries are seeded into the `menu_items` table on startup.
 //
