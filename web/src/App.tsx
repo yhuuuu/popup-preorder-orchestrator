@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { CreateOrder } from './pages/CreateOrder'
 import { OrderDetail } from './pages/OrderDetail'
 import { WebhookEvents } from './pages/WebhookEvent'
+import { orderAPI } from './services/api'
 import './App.css'
 
 function App() {
@@ -34,10 +35,7 @@ function App() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/orders', {
-        headers: { 'Authorization': 'Bearer dev-token' }
-      })
-      const data = await response.json()
+      const data = await orderAPI.getOrders()
       setOrders(data.orders || [])
     } catch (error) {
       console.error(error)

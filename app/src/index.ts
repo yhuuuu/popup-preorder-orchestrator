@@ -16,23 +16,26 @@ import {
 const app = express();
 const PORT = 3000;
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET ?? 'dev-webhook-secret';
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173';
+const ALLOWED_ORIGINS = (process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean);
 
 // Middleware
-app.use(express.json());
 app.use((req, res, next) => {
   const requestOrigin = req.header('Origin');
-  if (requestOrigin === FRONTEND_ORIGIN) {
-    res.header('Access-Control-Allow-Origin', FRONTEND_ORIGIN);
+  if (requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin.replace(/\/$/, ''))) {
+    res.header('Access-Control-Allow-Origin', requestOrigin);
     res.header('Vary', 'Origin');
   }
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-webhook-secret');
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
   next();
 });
+app.use(express.json());
 app.use(requestLogger);
 
 function sleep(ms: number): Promise<void> {
