@@ -175,22 +175,26 @@ describe('API behavior', () => {
   })
 
   it('searches orders by customer name', async () => {
+    // The test database is not reset between runs, so use a name that cannot
+    // collide with rows left behind by an earlier run.
+    const uniqueName = `Searchtarget ${Date.now()}`
+
     await request(app)
       .post('/api/orders')
       .set('Authorization', authHeader)
       .send({
-        customer_name: 'Zebediah Searchtarget',
+        customer_name: uniqueName,
         items: [{ menu_item_id: matchaId, quantity: 1 }],
         pickup_slot: '1:00 PM',
       })
 
     const response = await request(app)
-      .get('/api/orders?search=Searchtarget')
+      .get(`/api/orders?search=${encodeURIComponent(uniqueName)}`)
       .set('Authorization', authHeader)
 
     expect(response.status).toBe(200)
     expect(response.body.total).toBe(1)
-    expect(response.body.orders[0].customer_name).toBe('Zebediah Searchtarget')
+    expect(response.body.orders[0].customer_name).toBe(uniqueName)
   })
 
   it('searches orders by flavour', async () => {
