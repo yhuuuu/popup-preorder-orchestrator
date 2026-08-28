@@ -196,12 +196,42 @@ app.get('/api/orders', authMiddleware, (req, res) => {
 
   const start = (page - 1) * limit;
 
-  // Fetch total order count
-  const countResult = db.prepare('SELECT COUNT(*) as total FROM orders').get() as { total: number };
+  // Optional filters. These are applied in SQL rather than on the client so
+  // that `total` and the pagination stay correct.
+  const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+  const status = typeof req.query.status === 'string' ? req.query.status : '';
+
+  const conditions: string[] = [];
+  const params: any[] = [];
+
+  if (search) {
+    // Match the customer, or any flavour on the order.
+    conditions.push(`(
+      o.customer_name LIKE ?
+      OR EXISTS (
+        SELECT 1 FROM order_items oi
+        JOIN menu_items mi ON mi.id = oi.menu_item_id
+        WHERE oi.order_id = o.id AND mi.name LIKE ?
+      )
+    )`);
+    params.push(`%${search}%`, `%${search}%`);
+  }
+
+  if (status && status !== 'all') {
+    conditions.push('o.status = ?');
+    params.push(status);
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  const countResult = db
+    .prepare(`SELECT COUNT(*) as total FROM orders o ${where}`)
+    .get(...params) as { total: number };
   const total = countResult.total;
 
-  // Fetch paginated orders
-  const orders = db.prepare('SELECT * FROM orders LIMIT ? OFFSET ?').all(limit, start) as any[];
+  const orders = db
+    .prepare(`SELECT o.* FROM orders o ${where} ORDER BY o.created_at DESC, o.id DESC LIMIT ? OFFSET ?`)
+    .all(...params, limit, start) as any[];
 
   res.json({
     page,

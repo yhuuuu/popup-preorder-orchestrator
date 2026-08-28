@@ -41,9 +41,7 @@ function DashboardPage() {
     setPage(1);
   }, [search, status]);
 
-  const query = useQuery(
-    ordersListQuery({ search, status, page, pageSize: DEFAULT_PAGE_SIZE }),
-  );
+  const query = useQuery(ordersListQuery({ search, status, page, pageSize: DEFAULT_PAGE_SIZE }));
 
   const orders = query.data?.items ?? [];
   const hasFilters = search.trim().length > 0 || status !== "all";

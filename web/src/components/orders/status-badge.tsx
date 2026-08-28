@@ -3,18 +3,12 @@ import { STATUS_LABELS, type OrderStatus } from "@/lib/orders/types";
 
 const styles: Record<OrderStatus, string> = {
   pending: "bg-status-pending text-status-pending-foreground",
-  preparing: "bg-status-preparing text-status-preparing-foreground",
-  ready: "bg-status-ready text-status-ready-foreground",
+  in_progress: "bg-status-in-progress text-status-in-progress-foreground",
+  completed: "bg-status-completed text-status-completed-foreground",
   cancelled: "bg-status-cancelled text-status-cancelled-foreground",
 };
 
-export function StatusBadge({
-  status,
-  className,
-}: {
-  status: OrderStatus;
-  className?: string;
-}) {
+export function StatusBadge({ status, className }: { status: OrderStatus; className?: string }) {
   return (
     <span
       className={cn(

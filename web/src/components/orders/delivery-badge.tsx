@@ -2,15 +2,15 @@ import { cn } from "@/lib/utils";
 import type { WebhookDeliveryStatus } from "@/lib/orders/types";
 
 const styles: Record<WebhookDeliveryStatus, string> = {
-  success: "bg-status-ready text-status-ready-foreground",
+  received: "bg-status-pending text-status-pending-foreground",
+  processed: "bg-status-completed text-status-completed-foreground",
   failed: "bg-status-cancelled text-status-cancelled-foreground",
-  retrying: "bg-status-pending text-status-pending-foreground",
 };
 
 const labels: Record<WebhookDeliveryStatus, string> = {
-  success: "Success",
+  received: "Received",
+  processed: "Processed",
   failed: "Failed",
-  retrying: "Retrying",
 };
 
 export function DeliveryBadge({

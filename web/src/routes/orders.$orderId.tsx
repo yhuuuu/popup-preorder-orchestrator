@@ -52,8 +52,7 @@ function OrderDetailPage() {
 
   const query = useQuery(orderDetailQuery(orderId));
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: orderKeys.all });
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: orderKeys.all });
 
   const statusMutation = useMutation({
     mutationFn: (status: OrderStatus) => ordersApi.updateOrderStatus(orderId, status),
@@ -61,8 +60,7 @@ function OrderDetailPage() {
       await invalidate();
       toast.success(`Order ${order.id} marked as ${STATUS_LABELS[order.status].toLowerCase()}`);
     },
-    onError: (error: Error) =>
-      toast.error("Status update failed", { description: error.message }),
+    onError: (error: Error) => toast.error("Status update failed", { description: error.message }),
   });
 
   const deleteMutation = useMutation({
@@ -134,7 +132,7 @@ function OrderDetailPage() {
     <PageShell>
       <PageHeader
         title={`Order ${order.id}`}
-        description={`Placed ${formatFull(order.createdAt)} UTC`}
+        description={`Placed ${formatFull(order.created_at)} UTC`}
         actions={backButton}
       />
 
@@ -146,15 +144,29 @@ function OrderDetailPage() {
           </CardHeader>
           <CardContent>
             <dl>
-              <DetailRow label="Customer" value={order.customerName} />
-              <DetailRow label="Item" value={order.itemName} />
-              <DetailRow label="Quantity" value={<span className="tabular">{order.quantity}</span>} />
-              <DetailRow label="Pickup time" value={`${formatFull(order.pickupTime)} UTC`} />
+              <DetailRow label="Customer" value={order.customer_name} />
+              <DetailRow label="Pickup time" value={order.pickup_slot} />
+              <DetailRow
+                label="Flavours"
+                value={
+                  <ul className="grid gap-1">
+                    {order.items.map((item) => (
+                      <li key={item.menu_item_id} className="flex justify-between gap-4">
+                        <span>{item.item_name}</span>
+                        <span className="tabular text-muted-foreground">× {item.quantity}</span>
+                      </li>
+                    ))}
+                  </ul>
+                }
+              />
+              <DetailRow
+                label="Total items"
+                value={<span className="tabular">{order.total_quantity}</span>}
+              />
               <DetailRow
                 label="Order ID"
                 value={<span className="font-mono text-xs">{order.id}</span>}
               />
-              <DetailRow label="Notes" value={order.notes ?? "—"} />
             </dl>
           </CardContent>
         </Card>
@@ -167,17 +179,17 @@ function OrderDetailPage() {
             <Button
               size="sm"
               variant="outline"
-              disabled={busy || closed || order.status === "preparing"}
-              onClick={() => statusMutation.mutate("preparing")}
+              disabled={busy || closed || order.status === "in_progress"}
+              onClick={() => statusMutation.mutate("in_progress")}
             >
-              Mark as preparing
+              Mark as in progress
             </Button>
             <Button
               size="sm"
-              disabled={busy || closed || order.status === "ready"}
-              onClick={() => statusMutation.mutate("ready")}
+              disabled={busy || closed || order.status === "completed"}
+              onClick={() => statusMutation.mutate("completed")}
             >
-              Mark as ready
+              Mark as completed
             </Button>
 
             <div className="mt-1 border-t border-border pt-3 grid gap-2">
@@ -188,7 +200,7 @@ function OrderDetailPage() {
                   </Button>
                 }
                 title={`Cancel order ${order.id}?`}
-                description={`${order.customerName} will no longer be expected for pickup. You can still see the order in the list.`}
+                description={`${order.customer_name} will no longer be expected for pickup. You can still see the order in the list.`}
                 confirmLabel="Cancel order"
                 cancelLabel="Keep order"
                 destructive

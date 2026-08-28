@@ -22,9 +22,23 @@ const full = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 });
 
-export const formatDateTime = (iso: string) => dateTime.format(new Date(iso));
-export const formatTime = (iso: string) => timeOnly.format(new Date(iso));
-export const formatFull = (iso: string) => full.format(new Date(iso));
+// SQLite hands back "2026-08-06 21:46:20" (UTC, no timezone marker). Safari and
+// Firefox will not reliably parse that, so normalise it to an ISO string first.
+function parseTimestamp(value: string): Date {
+  if (!value) return new Date(NaN);
+  const normalised = value.includes("T") ? value : value.replace(" ", "T");
+  const withZone = /[Zz]|[+-]\d{2}:?\d{2}$/.test(normalised) ? normalised : `${normalised}Z`;
+  return new Date(withZone);
+}
+
+function safeFormat(formatter: Intl.DateTimeFormat, value: string): string {
+  const date = parseTimestamp(value);
+  return Number.isNaN(date.getTime()) ? value : formatter.format(date);
+}
+
+export const formatDateTime = (value: string) => safeFormat(dateTime, value);
+export const formatTime = (value: string) => safeFormat(timeOnly, value);
+export const formatFull = (value: string) => safeFormat(full, value);
 
 /** Value for a datetime-local input, defaulting to the next round hour. */
 export function defaultPickupValue(now = new Date()) {

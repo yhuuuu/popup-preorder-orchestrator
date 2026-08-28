@@ -1,42 +1,51 @@
-export type OrderStatus = "pending" | "preparing" | "ready" | "cancelled";
+// Mirrors the Express API in app/. Field names are snake_case because they come
+// straight from the JSON responses; do not rename them without changing the API.
+
+export type OrderStatus = "pending" | "in_progress" | "completed" | "cancelled";
+
+export interface MenuItem {
+  id: number;
+  name: string;
+  available: number;
+}
+
+export interface OrderItem {
+  menu_item_id: number;
+  item_name: string;
+  quantity: number;
+}
 
 export interface Order {
-  id: string;
-  customerName: string;
-  itemName: string;
-  quantity: number;
-  pickupTime: string; // ISO string
+  id: number;
+  customer_name: string;
+  pickup_slot: string;
+  items: OrderItem[];
+  total_quantity: number;
   status: OrderStatus;
-  createdAt: string;
-  notes?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CreateOrderInput {
-  customerName: string;
-  itemName: string;
-  quantity: number;
-  pickupTime: string;
+  customer_name: string;
+  pickup_slot: string;
+  items: { menu_item_id: number; quantity: number }[];
 }
 
-export type WebhookDeliveryStatus = "success" | "failed" | "retrying";
-
-export interface WebhookAttempt {
-  attempt: number;
-  at: string;
-  responseCode: number | null;
-  message: string;
-}
+export type WebhookDeliveryStatus = "received" | "processed" | "failed";
 
 export interface WebhookEvent {
-  id: string;
-  orderId: string;
-  eventType: string;
-  deliveryStatus: WebhookDeliveryStatus;
-  attemptCount: number;
-  createdAt: string;
-  endpoint: string;
-  payload: Record<string, unknown>;
-  attempts: WebhookAttempt[];
+  id: number;
+  direction: string;
+  event_type: string;
+  order_id: number | null;
+  source_system: string | null;
+  payload: string;
+  status: WebhookDeliveryStatus;
+  attempt_count: number;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ListOrdersParams {
@@ -54,11 +63,17 @@ export interface Paginated<T> {
   hasMore: boolean;
 }
 
-export const ORDER_STATUSES: OrderStatus[] = ["pending", "preparing", "ready", "cancelled"];
+export const ORDER_STATUSES: OrderStatus[] = ["pending", "in_progress", "completed", "cancelled"];
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
   pending: "Pending",
-  preparing: "Preparing",
-  ready: "Ready",
+  in_progress: "In progress",
+  completed: "Completed",
   cancelled: "Cancelled",
 };
+
+// A one-line summary of an order's flavours, e.g. "Matcha banana x 2, Lychee rose x 1".
+export function summarizeItems(items: OrderItem[]): string {
+  if (!items?.length) return "No items";
+  return items.map((item) => `${item.item_name} × ${item.quantity}`).join(", ");
+}

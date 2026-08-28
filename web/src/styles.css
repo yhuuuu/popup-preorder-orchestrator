@@ -48,10 +48,10 @@
   --color-ring-offset-background: var(--background);
   --color-status-pending: var(--status-pending);
   --color-status-pending-foreground: var(--status-pending-foreground);
-  --color-status-preparing: var(--status-preparing);
-  --color-status-preparing-foreground: var(--status-preparing-foreground);
-  --color-status-ready: var(--status-ready);
-  --color-status-ready-foreground: var(--status-ready-foreground);
+  --color-status-in-progress: var(--status-in-progress);
+  --color-status-in-progress-foreground: var(--status-in-progress-foreground);
+  --color-status-completed: var(--status-completed);
+  --color-status-completed-foreground: var(--status-completed-foreground);
   --color-status-cancelled: var(--status-cancelled);
   --color-status-cancelled-foreground: var(--status-cancelled-foreground);
   --shadow-card: 0 1px 2px oklch(0.402 0.056 153.6 / 6%), 0 8px 20px -12px oklch(0.402 0.056 153.6 / 14%);
@@ -82,10 +82,10 @@
 
   --status-pending: oklch(0.93 0.04 85);
   --status-pending-foreground: oklch(0.46 0.08 65);
-  --status-preparing: oklch(0.9 0.045 305.3);
-  --status-preparing-foreground: oklch(0.42 0.09 300);
-  --status-ready: oklch(0.9 0.045 153.6);
-  --status-ready-foreground: oklch(0.402 0.056 153.6);
+  --status-in-progress: oklch(0.9 0.045 305.3);
+  --status-in-progress-foreground: oklch(0.42 0.09 300);
+  --status-completed: oklch(0.9 0.045 153.6);
+  --status-completed-foreground: oklch(0.402 0.056 153.6);
   --status-cancelled: oklch(0.92 0.014 40);
   --status-cancelled-foreground: oklch(0.5 0.055 35);
 }

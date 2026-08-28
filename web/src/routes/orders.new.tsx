@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ordersApi } from "@/lib/orders/api";
 import { orderKeys } from "@/lib/orders/queries";
-import type { CreateOrderInput } from "@/lib/orders/types";
+import { summarizeItems, type CreateOrderInput } from "@/lib/orders/types";
 
 export const Route = createFileRoute("/orders/new")({
   head: () => ({
@@ -18,12 +18,12 @@ export const Route = createFileRoute("/orders/new")({
       { title: "New Pre-order — Pop-up Orders" },
       {
         name: "description",
-        content: "Add a pop-up pre-order with customer, item, quantity, and pickup time.",
+        content: "Add a pop-up pre-order with customer, flavours, and pickup time.",
       },
       { property: "og:title", content: "New Pre-order — Pop-up Orders" },
       {
         property: "og:description",
-        content: "Add a pop-up pre-order with customer, item, quantity, and pickup time.",
+        content: "Add a pop-up pre-order with customer, flavours, and pickup time.",
       },
     ],
   }),
@@ -39,7 +39,7 @@ function CreateOrderPage() {
     onSuccess: async (order) => {
       await queryClient.invalidateQueries({ queryKey: orderKeys.all });
       toast.success(`Order ${order.id} created`, {
-        description: `${order.quantity} × ${order.itemName} for ${order.customerName}.`,
+        description: `${summarizeItems(order.items)} for ${order.customer_name}.`,
       });
       navigate({ to: "/" });
     },

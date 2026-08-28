@@ -28,3 +28,17 @@ export const webhookEventsQuery = () =>
     queryKey: orderKeys.webhookEvents,
     queryFn: () => ordersApi.listWebhookEvents(),
   });
+
+export const menuQuery = () =>
+  queryOptions({
+    queryKey: ["menu"] as const,
+    queryFn: () => ordersApi.getMenu(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+export const pickupSlotsQuery = () =>
+  queryOptions({
+    queryKey: ["pickup-slots"] as const,
+    queryFn: () => ordersApi.getPickupSlots(),
+    staleTime: 5 * 60 * 1000,
+  });

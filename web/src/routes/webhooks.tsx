@@ -32,6 +32,16 @@ export const Route = createFileRoute("/webhooks")({
   component: WebhookEventsPage,
 });
 
+// The API stores the payload as a JSON string; pretty-print it when possible
+// and fall back to the raw text so a malformed payload is still visible.
+function formatPayload(payload: string): string {
+  try {
+    return JSON.stringify(JSON.parse(payload), null, 2);
+  } catch {
+    return payload;
+  }
+}
+
 function EventRow({ event }: { event: WebhookEvent }) {
   const [open, setOpen] = useState(false);
   const panelId = `event-panel-${event.id}`;
@@ -46,21 +56,21 @@ function EventRow({ event }: { event: WebhookEvent }) {
         className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-secondary/60 focus-visible:bg-secondary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring md:grid-cols-[150px_92px_minmax(0,1fr)_110px_70px_140px_20px]"
       >
         <span className="truncate font-mono text-xs text-muted-foreground">{event.id}</span>
-        <span className="hidden font-mono text-xs md:inline">{event.orderId}</span>
-        <span className="hidden truncate text-sm md:inline">{event.eventType}</span>
+        <span className="hidden font-mono text-xs md:inline">{event.order_id ?? "—"}</span>
+        <span className="hidden truncate text-sm md:inline">{event.event_type}</span>
         <span className="hidden md:inline">
-          <DeliveryBadge status={event.deliveryStatus} />
+          <DeliveryBadge status={event.status} />
         </span>
         <span className="hidden text-xs tabular text-muted-foreground md:inline">
-          {event.attemptCount} {event.attemptCount === 1 ? "try" : "tries"}
+          {event.attempt_count} {event.attempt_count === 1 ? "try" : "tries"}
         </span>
         <span className="hidden text-xs tabular text-muted-foreground md:inline">
-          {formatDateTime(event.createdAt)}
+          {formatDateTime(event.created_at)}
         </span>
 
         {/* Mobile summary */}
         <span className="flex items-center gap-2 md:hidden">
-          <DeliveryBadge status={event.deliveryStatus} />
+          <DeliveryBadge status={event.status} />
           <ChevronDown
             className={cn(
               "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
@@ -79,36 +89,41 @@ function EventRow({ event }: { event: WebhookEvent }) {
       </button>
 
       <div className="px-3 pb-2 text-xs text-muted-foreground md:hidden">
-        {event.eventType} · {event.orderId} · {formatDateTime(event.createdAt)}
+        {event.event_type} · {event.order_id ?? "—"} · {formatDateTime(event.created_at)}
       </div>
 
       {open ? (
         <div id={panelId} className="grid gap-3 bg-secondary/40 px-3 py-3 md:grid-cols-2">
           <div>
-            <h3 className="text-xs font-semibold tracking-wide uppercase">Delivery attempts</h3>
-            <p className="mt-1 text-xs text-muted-foreground">Endpoint: {event.endpoint}</p>
-            <ul className="mt-2 grid gap-1.5">
-              {event.attempts.map((attempt) => (
-                <li
-                  key={attempt.attempt}
-                  className="rounded-md border border-border bg-card px-2.5 py-1.5 text-xs"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium">Attempt {attempt.attempt}</span>
-                    <span className="tabular text-muted-foreground">
-                      {attempt.responseCode ?? "—"}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-muted-foreground">{attempt.message}</p>
-                  <p className="text-muted-foreground">{formatFull(attempt.at)} UTC</p>
-                </li>
-              ))}
-            </ul>
+            <h3 className="text-xs font-semibold tracking-wide uppercase">Delivery</h3>
+            <dl className="mt-2 grid gap-1.5 text-xs">
+              <div className="flex justify-between gap-2 rounded-md border border-border bg-card px-2.5 py-1.5">
+                <dt className="text-muted-foreground">Direction</dt>
+                <dd>{event.direction}</dd>
+              </div>
+              <div className="flex justify-between gap-2 rounded-md border border-border bg-card px-2.5 py-1.5">
+                <dt className="text-muted-foreground">Source</dt>
+                <dd>{event.source_system ?? "—"}</dd>
+              </div>
+              <div className="flex justify-between gap-2 rounded-md border border-border bg-card px-2.5 py-1.5">
+                <dt className="text-muted-foreground">Attempts</dt>
+                <dd className="tabular">{event.attempt_count}</dd>
+              </div>
+              <div className="flex justify-between gap-2 rounded-md border border-border bg-card px-2.5 py-1.5">
+                <dt className="text-muted-foreground">Last updated</dt>
+                <dd>{formatFull(event.updated_at)} UTC</dd>
+              </div>
+            </dl>
+            {event.last_error ? (
+              <p className="mt-2 rounded-md border border-destructive/40 bg-destructive/5 px-2.5 py-1.5 text-xs text-destructive">
+                {event.last_error}
+              </p>
+            ) : null}
           </div>
           <div>
             <h3 className="text-xs font-semibold tracking-wide uppercase">Payload</h3>
             <pre className="mt-2 overflow-x-auto rounded-md border border-border bg-card p-2.5 text-xs">
-              <code>{JSON.stringify(event.payload, null, 2)}</code>
+              <code>{formatPayload(event.payload)}</code>
             </pre>
           </div>
         </div>

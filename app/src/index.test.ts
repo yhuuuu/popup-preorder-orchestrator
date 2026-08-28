@@ -153,6 +153,71 @@ describe('API behavior', () => {
     expect(response.body.pickup_slots).toEqual(['1:00 PM', '3:00 PM'])
   })
 
+  it('filters the order list by status', async () => {
+    await request(app)
+      .post('/api/orders')
+      .set('Authorization', authHeader)
+      .send({
+        customer_name: 'Filter Status Customer',
+        items: [{ menu_item_id: matchaId, quantity: 1 }],
+        pickup_slot: '1:00 PM',
+      })
+
+    const response = await request(app)
+      .get('/api/orders?status=pending&limit=100')
+      .set('Authorization', authHeader)
+
+    expect(response.status).toBe(200)
+    expect(response.body.orders.length).toBeGreaterThan(0)
+    for (const order of response.body.orders) {
+      expect(order.status).toBe('pending')
+    }
+  })
+
+  it('searches orders by customer name', async () => {
+    await request(app)
+      .post('/api/orders')
+      .set('Authorization', authHeader)
+      .send({
+        customer_name: 'Zebediah Searchtarget',
+        items: [{ menu_item_id: matchaId, quantity: 1 }],
+        pickup_slot: '1:00 PM',
+      })
+
+    const response = await request(app)
+      .get('/api/orders?search=Searchtarget')
+      .set('Authorization', authHeader)
+
+    expect(response.status).toBe(200)
+    expect(response.body.total).toBe(1)
+    expect(response.body.orders[0].customer_name).toBe('Zebediah Searchtarget')
+  })
+
+  it('searches orders by flavour', async () => {
+    const created = await request(app)
+      .post('/api/orders')
+      .set('Authorization', authHeader)
+      .send({
+        customer_name: 'Flavour Search Customer',
+        items: [{ menu_item_id: matchaId, quantity: 1 }],
+        pickup_slot: '1:00 PM',
+      })
+
+    const flavour = created.body.data.items[0].item_name
+
+    const response = await request(app)
+      .get(`/api/orders?search=${encodeURIComponent(flavour)}`)
+      .set('Authorization', authHeader)
+
+    expect(response.status).toBe(200)
+    expect(response.body.total).toBeGreaterThan(0)
+    for (const order of response.body.orders) {
+      expect(
+        order.items.some((item: any) => item.item_name === flavour)
+      ).toBe(true)
+    }
+  })
+
   it('rejects an order with no items', async () => {
     const response = await request(app)
       .post('/api/orders')
