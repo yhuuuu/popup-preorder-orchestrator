@@ -9,6 +9,7 @@ function App() {
   const [page, setPage] = useState('orders')
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -28,20 +29,32 @@ function App() {
     if (page !== 'orders') return
 
     fetchOrders()
-    const refreshTimer = window.setInterval(fetchOrders, 5000)
+    const refreshTimer = window.setInterval(() => fetchOrders(true), 5000)
 
     return () => window.clearInterval(refreshTimer)
   }, [page])
 
-  const fetchOrders = async () => {
+  // `isBackgroundRefresh` marks the 5s poll. Those failures must not clear the
+  // list or flip the page into a loading state while the user is reading it.
+  const fetchOrders = async (isBackgroundRefresh = false) => {
     try {
       const data = await orderAPI.getOrders()
       setOrders(data.orders || [])
-    } catch (error) {
-      console.error(error)
+      setError('')
+    } catch (err) {
+      console.error(err)
+      setError('Something went wrong while loading orders.')
     } finally {
-      setLoading(false)
+      if (!isBackgroundRefresh) {
+        setLoading(false)
+      }
     }
+  }
+
+  const handleRetry = () => {
+    setLoading(true)
+    setError('')
+    fetchOrders()
   }
 
   const getStatusColor = (status: string) => {
@@ -186,16 +199,79 @@ function App() {
           margin: '0 0 32px 0',
           fontSize: '14px'
         }}>
-          {orders.length} orders
+          {loading ? 'Loading orders…' : `${orders.length} orders`}
         </p>
 
         {loading ? (
           <div style={{ textAlign: 'center', color: '#8b7b8e', padding: '40px' }}>
             Loading...
           </div>
+        ) : error && orders.length === 0 ? (
+          <div style={{
+            textAlign: 'center',
+            padding: '60px 20px',
+            background: 'white',
+            borderRadius: '12px',
+            border: '2px solid #c33333'
+          }}>
+            <div style={{ fontSize: '16px', fontWeight: '600', color: '#c33333', marginBottom: '8px' }}>
+              Something went wrong
+            </div>
+            <div style={{ fontSize: '14px', color: '#8b7b8e', marginBottom: '20px' }}>
+              {error} Check that the API is running on port 3000.
+            </div>
+            <button
+              onClick={handleRetry}
+              style={{
+                background: '#d6c7e9',
+                color: '#2f513a',
+                border: 'none',
+                padding: '12px 28px',
+                borderRadius: '24px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              Retry
+            </button>
+          </div>
         ) : orders.length > 0 ? (
           <div style={{ display: 'grid', gap: '8px' }}>
-            {orders.map((order: any) => (
+            {error && (
+              // The list is still on screen, so a failed poll only warrants a
+              // banner telling the user the data may be stale.
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '12px',
+                background: '#fde8e8',
+                border: '1px solid #f0d5d5',
+                color: '#c33333',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '13px'
+              }}>
+                <span>Couldn't refresh — showing the last loaded orders.</span>
+                <button
+                  onClick={handleRetry}
+                  style={{
+                    background: 'transparent',
+                    color: '#c33333',
+                    border: '1px solid #c33333',
+                    padding: '4px 12px',
+                    borderRadius: '12px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Retry
+                </button>
+              </div>
+            )}            {orders.map((order: any) => (
               <div
                 key={order.id}
                 className="order-row"
