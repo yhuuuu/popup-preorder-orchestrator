@@ -61,7 +61,7 @@ Use a real order ID (create an order first), then resend the webhook.
 curl -i -X POST http://localhost:3000/api/orders \
   -H "Authorization: Bearer dev-token" \
   -H "Content-Type: application/json" \
-  -d '{"customer_name":"A","item_name":"Cake","quantity":0,"pickup_slot":"9"}'
+  -d '{"customer_name":"A","pickup_slot":"9","items":[{"menu_item_id":1,"quantity":0}]}'
 ```
 
 ### Expected response
@@ -78,9 +78,9 @@ HTTP/1.1 400 Bad Request
 
 Send valid values:
 - `customer_name`: 2-100 characters
-- `item_name`: 2-100 characters
-- `quantity`: integer 1-1000
-- `pickup_slot`: 3-50 characters
+- `pickup_slot`: one of the values from `GET /api/pickup-slots`
+- `items`: 1-20 entries, each a distinct `menu_item_id` from `GET /api/menu`
+- `items[].quantity`: integer 1-1000
 
 ## 4) 503 Webhook processing failed after retries
 

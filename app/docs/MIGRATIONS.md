@@ -6,7 +6,7 @@ The application uses SQLite and initializes the `orders` and `webhook_events`
 tables with `CREATE TABLE IF NOT EXISTS` when the backend starts. This keeps a
 new local database usable without a separate setup command.
 
-The canonical schema is documented in [`schema.sql`](./schema.sql). Runtime
+The canonical schema is documented in [`../sql/schema.sql`](../sql/schema.sql). Runtime
 data is stored in `orders.db`; automated tests use `orders.test.db`.
 
 ## Safe migration workflow
@@ -21,7 +21,7 @@ data is stored in `orders.db`; automated tests use `orders.test.db`.
    such as `001_add_vendor_id.sql`.
 3. Test the migration against a copy of the database, not production data.
 4. Run the checks in [`validation.sql`](./validation.sql).
-5. Update `schema.sql` and the application queries to match the new schema.
+5. Update `../sql/schema.sql` and the application queries to match the new schema.
 6. Record the change, rollout date, and rollback plan in this document.
 
 ## Example migration

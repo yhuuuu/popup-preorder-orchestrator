@@ -7,7 +7,7 @@ SQLite persistence, webhook callbacks, retry handling, and a React dashboard.
 ## Architecture
 
 ```text
-React + Vite dashboard (web:5173)
+React + TanStack Start dashboard (web:8080)
               |
               | Axios / JSON / Bearer token
               v
@@ -25,6 +25,8 @@ POST /api/webhooks/order-status
 ## Features
 
 - Create, list, inspect, update, and delete pre-orders
+- Order several tiramisu flavours in one order, each with its own quantity
+- Search orders by customer or flavour and filter them by status
 - Validate request fields and return consistent 4xx errors
 - Protect order routes with Bearer-token authentication
 - Receive order status callbacks from an external system
@@ -59,7 +61,10 @@ npm run dev
 ```
 
 The API runs at `http://localhost:3000` and the dashboard runs at
-`http://localhost:5173`.
+`http://localhost:8080`.
+
+The dashboard port must appear in `FRONTEND_ORIGIN`, or the browser blocks
+every request with a CORS error.
 
 ## Environment variables
 
@@ -68,7 +73,7 @@ Backend variables are defined in `app/.env.example`:
 ```text
 API_TOKEN=dev-token
 WEBHOOK_SECRET=dev-webhook-secret
-FRONTEND_ORIGIN=http://localhost:5173
+FRONTEND_ORIGIN=http://localhost:5173,http://localhost:8080
 ```
 
 Frontend variables are defined in `web/.env.example`:
@@ -89,7 +94,9 @@ All endpoints except `/api/health` require authentication. Order routes use
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
 | GET | `/api/health` | Check API availability |
-| GET | `/api/orders` | List paginated orders |
+| GET | `/api/orders` | List paginated orders, filterable by `search` and `status` |
+| GET | `/api/menu` | List the tiramisu flavours available to order |
+| GET | `/api/pickup-slots` | List the pickup times the pop-up offers |
 | POST | `/api/orders` | Create an order |
 | GET | `/api/orders/:id` | Retrieve one order |
 | PATCH | `/api/orders/:id/status` | Update order status |
@@ -128,12 +135,12 @@ GitHub Actions runs these checks for pushes and pull requests.
 
 ## Documentation
 
-- [`app/docs/schema.sql`](./app/docs/schema.sql) - Current SQLite schema
+- [`app/sql/schema.sql`](./app/sql/schema.sql) - Current SQLite schema
 - [`app/docs/validation.sql`](./app/docs/validation.sql) - Data-quality checks
 - [`app/docs/MIGRATIONS.md`](./app/docs/MIGRATIONS.md) - Migration and rollback workflow
 - [`app/docs/WEBHOOK_TESTING.md`](./app/docs/WEBHOOK_TESTING.md) - Manual webhook tests
 - [`app/DEVLOG.md`](./app/DEVLOG.md) - Backend decisions and troubleshooting
-- [`web/DEVLOG.md`](./web/DEVLOG.md) - Frontend decisions and troubleshooting
+- [`web/README.md`](./web/README.md) - Frontend setup and data-model notes
 
 ## Interview demonstration
 
