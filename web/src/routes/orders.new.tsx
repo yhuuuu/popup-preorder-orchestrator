@@ -15,12 +15,12 @@ import { summarizeItems, type CreateOrderInput } from "@/lib/orders/types";
 export const Route = createFileRoute("/orders/new")({
   head: () => ({
     meta: [
-      { title: "New Pre-order — Pop-up Orders" },
+      { title: "New Pre-order — Bakery Based" },
       {
         name: "description",
         content: "Add a pop-up pre-order with customer, flavours, and pickup time.",
       },
-      { property: "og:title", content: "New Pre-order — Pop-up Orders" },
+      { property: "og:title", content: "New Pre-order — Bakery Based" },
       {
         property: "og:description",
         content: "Add a pop-up pre-order with customer, flavours, and pickup time.",

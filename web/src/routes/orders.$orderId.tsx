@@ -19,12 +19,12 @@ import { STATUS_LABELS, type OrderStatus } from "@/lib/orders/types";
 export const Route = createFileRoute("/orders/$orderId")({
   head: ({ params }) => ({
     meta: [
-      { title: `Order ${params.orderId} — Pop-up Orders` },
+      { title: `Order ${params.orderId} — Bakery Based` },
       {
         name: "description",
         content: `Full details and status controls for pop-up pre-order ${params.orderId}.`,
       },
-      { property: "og:title", content: `Order ${params.orderId} — Pop-up Orders` },
+      { property: "og:title", content: `Order ${params.orderId} — Bakery Based` },
       {
         property: "og:description",
         content: `Full details and status controls for pop-up pre-order ${params.orderId}.`,

@@ -16,13 +16,13 @@ import { ordersListQuery } from "@/lib/orders/queries";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Pop-up Orders — Pre-order Dashboard" },
+      { title: "Bakery Based — Pre-order Dashboard" },
       {
         name: "description",
         content:
           "Track pop-up bakery pre-orders: search, filter by status, and manage pickups from one compact dashboard.",
       },
-      { property: "og:title", content: "Pop-up Orders — Pre-order Dashboard" },
+      { property: "og:title", content: "Bakery Based — Pre-order Dashboard" },
       {
         property: "og:description",
         content: "Search, filter, and manage pop-up food vendor pre-orders in one place.",
@@ -49,7 +49,7 @@ function DashboardPage() {
   return (
     <PageShell>
       <PageHeader
-        title="Pop-up Orders"
+        title="Bakery Based"
         description="Pre-orders for the weekend market stall."
         actions={
           <Button asChild size="sm">

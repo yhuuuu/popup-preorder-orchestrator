@@ -15,8 +15,8 @@ export function SiteNav() {
             to="/"
             className="min-w-0 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
-            <span className="block truncate font-display text-xl italic leading-none text-primary">
-              while you&apos;re up
+            <span className="block truncate font-display text-xl leading-none text-primary">
+              Bakery Based
             </span>
             <span className="mt-0.5 block text-[0.6rem] uppercase tracking-[0.22em] text-muted-foreground">
               Pre-order desk

@@ -16,13 +16,13 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/webhooks")({
   head: () => ({
     meta: [
-      { title: "Webhook Events — Pop-up Orders" },
+      { title: "Webhook Events — Bakery Based" },
       {
         name: "description",
         content:
           "Review webhook callback history for pop-up orders, including delivery status, retries, and payloads.",
       },
-      { property: "og:title", content: "Webhook Events — Pop-up Orders" },
+      { property: "og:title", content: "Webhook Events — Bakery Based" },
       {
         property: "og:description",
         content: "Delivery status, retry attempts, and payloads for every order webhook.",
