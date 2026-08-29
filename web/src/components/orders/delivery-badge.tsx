@@ -8,8 +8,8 @@ const styles: Record<WebhookDeliveryStatus, string> = {
 };
 
 const labels: Record<WebhookDeliveryStatus, string> = {
-  received: "Received",
-  processed: "Processed",
+  received: "Retrying",
+  processed: "Success",
   failed: "Failed",
 };
 
