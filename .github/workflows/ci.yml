@@ -37,7 +37,11 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: web
-        run: npm ci
+        # npm ci is flaky here because some of rolldown's optional
+        # platform-specific dependencies resolve differently between
+        # macOS (where the lockfile is generated) and the Linux CI
+        # runner. npm install re-resolves for the current platform.
+        run: npm install
 
       - name: Run frontend lint
         working-directory: web
