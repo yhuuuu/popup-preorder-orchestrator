@@ -6,9 +6,6 @@ const linkClass =
 export function SiteNav() {
   return (
     <header>
-      <p className="bg-primary px-4 py-1.5 text-center text-[0.7rem] uppercase tracking-[0.18em] text-primary-foreground">
-        Pop-up at the farmers market — Wednesdays 3–6pm
-      </p>
       <div className="border-b border-border bg-background">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Link
