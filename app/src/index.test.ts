@@ -1,11 +1,28 @@
 import request from 'supertest'
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { app, retryAsync } from './index'
+import db from './db'
 
 const webhookSecret = 'dev-webhook-secret'
 const authHeader = 'Bearer dev-token'
 
 describe('API behavior', () => {
+  // Menu IDs are assigned by the database, so read them instead of hardcoding.
+  let matchaId: number
+  let mangoId: number
+
+  beforeAll(async () => {
+    const response = await request(app)
+      .get('/api/menu')
+      .set('Authorization', authHeader)
+
+    expect(response.status).toBe(200)
+    expect(response.body.menu.length).toBeGreaterThanOrEqual(2)
+
+    matchaId = response.body.menu[0].id
+    mangoId = response.body.menu[1].id
+  })
+
   it('returns 401 when the webhook secret is invalid', async () => {
     const response = await request(app)
       .post('/api/webhooks/order-status')
@@ -40,9 +57,8 @@ describe('API behavior', () => {
       .set('Authorization', authHeader)
       .send({
         customer_name: 'Webhook Test Customer',
-        item_name: 'Webhook Test Item',
-        quantity: 1,
-        pickup_slot: '18:00',
+        items: [{ menu_item_id: matchaId, quantity: 1 }],
+        pickup_slot: '1:00 PM',
       })
 
     const orderId = createResponse.body.data.id
@@ -71,15 +87,19 @@ describe('API behavior', () => {
       .set('Authorization', authHeader)
       .send({
         customer_name: 'Automated Test Customer',
-        item_name: 'Automated Test Item',
-        quantity: 2,
-        pickup_slot: '19:00',
+        items: [
+          { menu_item_id: matchaId, quantity: 2 },
+          { menu_item_id: mangoId, quantity: 3 },
+        ],
+        pickup_slot: '1:00 PM',
       })
 
     expect(response.status).toBe(201)
     expect(response.body.code).toBe('ORDER_CREATED')
     expect(response.body.data.customer_name).toBe('Automated Test Customer')
     expect(response.body.data.status).toBe('pending')
+    expect(response.body.data.items).toHaveLength(2)
+    expect(response.body.data.total_quantity).toBe(5)
 
     await request(app)
       .delete(`/api/orders/${response.body.data.id}`)
@@ -91,9 +111,8 @@ describe('API behavior', () => {
       .post('/api/orders')
       .set('Authorization', authHeader)
       .send({
-        item_name: 'Test Item',
-        quantity: 1,
-        pickup_slot: '19:00',
+        items: [{ menu_item_id: matchaId, quantity: 1 }],
+        pickup_slot: '1:00 PM',
       })
 
     expect(response.status).toBe(400)
@@ -105,12 +124,146 @@ describe('API behavior', () => {
       .set('Authorization', authHeader)
       .send({
         customer_name: 'Invalid Quantity Customer',
-        item_name: 'Test Item',
-        quantity: 0,
-        pickup_slot: '19:00',
+        items: [{ menu_item_id: matchaId, quantity: 0 }],
+        pickup_slot: '1:00 PM',
       })
 
     expect(response.status).toBe(400)
+  })
+
+  it('rejects an order for a pickup time the pop-up does not offer', async () => {
+    const response = await request(app)
+      .post('/api/orders')
+      .set('Authorization', authHeader)
+      .send({
+        customer_name: 'Wrong Slot Customer',
+        items: [{ menu_item_id: matchaId, quantity: 1 }],
+        pickup_slot: '9:00 PM',
+      })
+
+    expect(response.status).toBe(400)
+  })
+
+  it('lists the offered pickup slots', async () => {
+    const response = await request(app)
+      .get('/api/pickup-slots')
+      .set('Authorization', authHeader)
+
+    expect(response.status).toBe(200)
+    expect(response.body.pickup_slots).toEqual(['1:00 PM', '3:00 PM'])
+  })
+
+  it('filters the order list by status', async () => {
+    await request(app)
+      .post('/api/orders')
+      .set('Authorization', authHeader)
+      .send({
+        customer_name: 'Filter Status Customer',
+        items: [{ menu_item_id: matchaId, quantity: 1 }],
+        pickup_slot: '1:00 PM',
+      })
+
+    const response = await request(app)
+      .get('/api/orders?status=pending&limit=100')
+      .set('Authorization', authHeader)
+
+    expect(response.status).toBe(200)
+    expect(response.body.orders.length).toBeGreaterThan(0)
+    for (const order of response.body.orders) {
+      expect(order.status).toBe('pending')
+    }
+  })
+
+  it('searches orders by customer name', async () => {
+    // The test database is not reset between runs, so use a name that cannot
+    // collide with rows left behind by an earlier run.
+    const uniqueName = `Searchtarget ${Date.now()}`
+
+    await request(app)
+      .post('/api/orders')
+      .set('Authorization', authHeader)
+      .send({
+        customer_name: uniqueName,
+        items: [{ menu_item_id: matchaId, quantity: 1 }],
+        pickup_slot: '1:00 PM',
+      })
+
+    const response = await request(app)
+      .get(`/api/orders?search=${encodeURIComponent(uniqueName)}`)
+      .set('Authorization', authHeader)
+
+    expect(response.status).toBe(200)
+    expect(response.body.total).toBe(1)
+    expect(response.body.orders[0].customer_name).toBe(uniqueName)
+  })
+
+  it('searches orders by flavour', async () => {
+    const created = await request(app)
+      .post('/api/orders')
+      .set('Authorization', authHeader)
+      .send({
+        customer_name: 'Flavour Search Customer',
+        items: [{ menu_item_id: matchaId, quantity: 1 }],
+        pickup_slot: '1:00 PM',
+      })
+
+    const flavour = created.body.data.items[0].item_name
+
+    const response = await request(app)
+      .get(`/api/orders?search=${encodeURIComponent(flavour)}`)
+      .set('Authorization', authHeader)
+
+    expect(response.status).toBe(200)
+    expect(response.body.total).toBeGreaterThan(0)
+    for (const order of response.body.orders) {
+      expect(
+        order.items.some((item: any) => item.item_name === flavour)
+      ).toBe(true)
+    }
+  })
+
+  it('rejects an order with no items', async () => {
+    const response = await request(app)
+      .post('/api/orders')
+      .set('Authorization', authHeader)
+      .send({
+        customer_name: 'Empty Items Customer',
+        items: [],
+        pickup_slot: '1:00 PM',
+      })
+
+    expect(response.status).toBe(400)
+  })
+
+  it('rejects an order listing the same flavour twice', async () => {
+    const response = await request(app)
+      .post('/api/orders')
+      .set('Authorization', authHeader)
+      .send({
+        customer_name: 'Duplicate Flavour Customer',
+        items: [
+          { menu_item_id: matchaId, quantity: 1 },
+          { menu_item_id: matchaId, quantity: 2 },
+        ],
+        pickup_slot: '1:00 PM',
+      })
+
+    expect(response.status).toBe(400)
+    expect(response.body.code).toBe('VALIDATION_ERROR')
+  })
+
+  it('rejects an order referencing a menu item that does not exist', async () => {
+    const response = await request(app)
+      .post('/api/orders')
+      .set('Authorization', authHeader)
+      .send({
+        customer_name: 'Unknown Flavour Customer',
+        items: [{ menu_item_id: 999999, quantity: 1 }],
+        pickup_slot: '1:00 PM',
+      })
+
+    expect(response.status).toBe(400)
+    expect(response.body.code).toBe('VALIDATION_ERROR')
   })
 
   it('returns 401 when creating an order without authentication', async () => {
@@ -118,9 +271,8 @@ describe('API behavior', () => {
       .post('/api/orders')
       .send({
         customer_name: 'Unauthenticated Customer',
-        item_name: 'Test Item',
-        quantity: 1,
-        pickup_slot: '19:00',
+        items: [{ menu_item_id: matchaId, quantity: 1 }],
+        pickup_slot: '1:00 PM',
       })
 
     expect(response.status).toBe(401)
@@ -141,9 +293,8 @@ describe('API behavior', () => {
       .set('Authorization', authHeader)
       .send({
         customer_name: 'Status Test Customer',
-        item_name: 'Status Test Item',
-        quantity: 1,
-        pickup_slot: '20:00',
+        items: [{ menu_item_id: mangoId, quantity: 1 }],
+        pickup_slot: '3:00 PM',
       })
 
     const orderId = createResponse.body.data.id
@@ -162,6 +313,33 @@ describe('API behavior', () => {
 
     expect(deleteResponse.status).toBe(200)
     expect(deleteResponse.body.code).toBe('ORDER_DELETED')
+  })
+
+  it('removes the item lines when an order is deleted', async () => {
+    const createResponse = await request(app)
+      .post('/api/orders')
+      .set('Authorization', authHeader)
+      .send({
+        customer_name: 'Cascade Test Customer',
+        items: [
+          { menu_item_id: matchaId, quantity: 1 },
+          { menu_item_id: mangoId, quantity: 4 },
+        ],
+        pickup_slot: '3:00 PM',
+      })
+
+    const orderId = createResponse.body.data.id
+    expect(createResponse.body.data.items).toHaveLength(2)
+
+    await request(app)
+      .delete(`/api/orders/${orderId}`)
+      .set('Authorization', authHeader)
+
+    const lines = db
+      .prepare('SELECT COUNT(*) AS total FROM order_items WHERE order_id = ?')
+      .get(orderId) as { total: number }
+
+    expect(lines.total).toBe(0)
   })
 })
 

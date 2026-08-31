@@ -1,47 +1,59 @@
-# Frontend Dashboard
+# Pop-up Orders — web
 
-This directory contains the React and Vite dashboard for the Pop-up Preorder
-Orchestrator.
+Frontend for the pop-up pre-order dashboard. Talks to the Express API in `../app`.
 
-## Responsibilities
+The UI was generated with Lovable and then rewired to the real API; the data
+layer in `src/lib/orders/` is hand-written and is the contract with the backend.
 
-- Display the order dashboard
-- Create new orders
-- View order details
-- Update order status
-- Delete orders
-- Display webhook processing history
-- Refresh order and webhook data automatically
+## Running it
 
-## Setup
+The API must be running first, otherwise every page shows its error state:
 
 ```bash
-npm install
-cp .env.example .env
-npm run dev
+cd ../app && npm install && npm run dev   # http://localhost:3000
+cd ../web && npm install && npm run dev   # http://localhost:8080
 ```
 
-The dashboard runs at `http://localhost:5173`. The backend must be running at
-the API URL configured in `VITE_API_BASE_URL`.
+`npm run dev` serves on **port 8080**. That port must appear in `FRONTEND_ORIGIN`
+in `app/.env`, or the browser blocks every request with a CORS error.
 
-## Commands
+## Configuration
+
+`web/.env` (not committed):
+
+```
+VITE_API_BASE_URL=http://localhost:3000/api
+VITE_API_TOKEN=dev-token
+```
+
+`VITE_`-prefixed variables are bundled into the browser JavaScript and are
+readable by anyone. That is fine for a local dev token, but a real deployment
+has to move the token server-side.
+
+## Layout
+
+| Path | Purpose |
+| --- | --- |
+| `src/routes/` | Pages, one file per route (TanStack Router) |
+| `src/lib/orders/types.ts` | The API contract. Fields are snake_case because they come straight from the JSON |
+| `src/lib/orders/api.ts` | The only place that performs HTTP calls |
+| `src/lib/orders/queries.ts` | react-query options, so caching lives in one place |
+| `src/components/orders/` | Order-specific components |
+| `src/components/ui/` | shadcn/ui primitives, unmodified |
+
+## Notes
+
+- An order holds **many flavours**, each with its own quantity (`items[]`), so
+  any view showing a single item name is out of date.
+- Pickup times are a fixed list from `GET /api/pickup-slots`; do not hardcode them.
+- Statuses are `pending`, `in_progress`, `completed`, `cancelled`.
+- Timestamps arrive as SQLite's `"YYYY-MM-DD HH:MM:SS"` in UTC. Use the helpers
+  in `src/lib/format.ts`, which normalise that before parsing.
+
+## Checks
 
 ```bash
-npm run dev
-npm run lint
-npm run build
-npm run preview
+npx tsc --noEmit   # types
+npm run lint       # eslint + prettier
+npm run build      # production build
 ```
-
-## Main files
-
-```text
-src/App.tsx                 Hash routing and dashboard layout
-src/pages/CreateOrder.tsx   Order creation form
-src/pages/OrderDetail.tsx   Order details and actions
-src/pages/WebhookEvent.tsx  Webhook event history
-src/services/api.ts         Axios client and shared API types
-src/App.css                 Responsive dashboard styling
-```
-
-See the [root README](../README.md) for the complete project overview.
