@@ -14,8 +14,12 @@ cd ../app && npm install && npm run dev   # http://localhost:3000
 cd ../web && npm install && npm run dev   # http://localhost:8080
 ```
 
-`npm run dev` serves on **port 8080**. That port must appear in `FRONTEND_ORIGIN`
-in `app/.env`, or the browser blocks every request with a CORS error.
+`npm run dev` serves on **port 8080** by default, falling back to **8081**
+then **8082** if that port is taken (common when another dev server is
+already running, e.g. VS Code's built-in preview). Check your terminal
+output for the actual port. Whichever port is used must appear in
+`FRONTEND_ORIGIN` in `app/.env`, or the browser blocks every request with a
+CORS error. Ports 5173, 5175, 8080, 8081, and 8082 are allowlisted by default.
 
 ## Configuration
 

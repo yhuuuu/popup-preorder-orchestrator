@@ -61,10 +61,12 @@ npm run dev
 ```
 
 The API runs at `http://localhost:3000` and the dashboard runs at
-`http://localhost:8080`.
+`http://localhost:8080` (Vite falls back to `8081`, then `8082`, if `8080` is
+already taken — check your terminal output for the actual port).
 
 The dashboard port must appear in `FRONTEND_ORIGIN`, or the browser blocks
-every request with a CORS error.
+every request with a CORS error. Ports 5173, 5175, 8080, 8081, and 8082 are
+allowlisted by default.
 
 ## Environment variables
 
